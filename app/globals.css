@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+:root {
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --gold-dark: #9a7a2e;
+  --black: #000000;
+  --black-soft: #0a0a0a;
+  --black-card: #111111;
+  --black-border: #1e1e1e;
+  --black-hover: #161616;
+  --gray-muted: #3a3a3a;
+  --gray-text: #888888;
+  --white: #ffffff;
+  --white-soft: #f0ece4;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background-color: var(--black-soft);
+  color: var(--white-soft);
+  font-family: "Georgia", serif;
+  height: 100%;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--black-card);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gold-dark);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
+
+/* Gold gradient text utility */
+.gold-text {
+  background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card base */
+.jarvis-card {
+  background: var(--black-card);
+  border: 1px solid var(--black-border);
+  border-radius: 12px;
+  transition: border-color 0.2s ease;
+}
+.jarvis-card:hover {
+  border-color: var(--gold-dark);
+}
+
+/* Gold button */
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: var(--black);
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+  font-family: "Georgia", serif;
+  letter-spacing: 0.05em;
+}
+.btn-gold:hover {
+  opacity: 0.88;
+}
+
+/* Ghost button */
+.btn-ghost {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold-dark);
+  border-radius: 8px;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: "Georgia", serif;
+}
+.btn-ghost:hover {
+  background: rgba(201, 168, 76, 0.08);
+}
+
+/* Status badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.badge-gold   { background: rgba(201,168,76,0.15); color: var(--gold-light); border: 1px solid var(--gold-dark); }
+.badge-green  { background: rgba(52,211,153,0.1);  color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+.badge-red    { background: rgba(239,68,68,0.1);   color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+.badge-blue   { background: rgba(96,165,250,0.1);  color: #93c5fd; border: 1px solid rgba(96,165,250,0.25); }
+.badge-gray   { background: rgba(100,100,100,0.2); color: #aaa;    border: 1px solid #333; }
+
+/* Input base */
+.jarvis-input {
+  background: #0d0d0d;
+  border: 1px solid var(--black-border);
+  color: var(--white-soft);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: "Georgia", serif;
+  font-size: 0.9rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.jarvis-input:focus {
+  border-color: var(--gold-dark);
+}
+.jarvis-input::placeholder {
+  color: #555;
+}
+
+/* Select */
+.jarvis-select {
+  background: #0d0d0d;
+  border: 1px solid var(--black-border);
+  color: var(--white-soft);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: "Georgia", serif;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.jarvis-select:focus {
+  border-color: var(--gold-dark);
+}
+
+/* Divider */
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-dark), transparent);
+  margin: 24px 0;
+}
+
+/* Glow pulse for AI indicator */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 6px 2px rgba(201,168,76,0.4); }
+  50%       { box-shadow: 0 0 14px 4px rgba(201,168,76,0.7); }
+}
+.glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+
+/* Typing dots for chat */
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40%           { transform: translateY(-6px); }
+}
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin: 0 2px; }
+.dot:nth-child(1) { animation: dot-bounce 1.2s ease infinite 0s; }
+.dot:nth-child(2) { animation: dot-bounce 1.2s ease infinite 0.2s; }
+.dot:nth-child(3) { animation: dot-bounce 1.2s ease infinite 0.4s; }
