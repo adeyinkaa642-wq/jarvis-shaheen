@@ -85,15 +85,18 @@ export default function JarvisChat() {
           aria-label="Open Jarvis chat"
           style={{
             position: "fixed", bottom: "28px", right: "28px", zIndex: 200,
-            width: "54px", height: "54px", borderRadius: "50%",
+            height: "48px", borderRadius: "999px",
             background: "linear-gradient(135deg, #c9a84c, #9a7a2e)",
             border: "none", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 20px rgba(201,168,76,0.4)",
+            gap: "8px", padding: "0 20px",
+            boxShadow: "0 4px 20px rgba(201,168,76,0.5)",
           }}
         >
-          {/* J icon */}
-          <span style={{ fontSize: "1.2rem", fontFamily: "Georgia, serif", color: "#000", fontWeight: 700 }}>J</span>
+          <span style={{ fontSize: "1rem", fontFamily: "Georgia, serif", color: "#000", fontWeight: 700 }}>J</span>
+          <span style={{ fontSize: "0.8rem", fontFamily: "Georgia, serif", color: "#000", fontWeight: 700, letterSpacing: "0.08em" }}>
+            Ask Jarvis
+          </span>
         </button>
       )}
 
