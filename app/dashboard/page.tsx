@@ -3,7 +3,7 @@ import { useStore } from "@/lib/store";
 import Link from "next/link";
 import {
   Search, Mail, CheckSquare, TrendingUp,
-  ArrowRight, Home, Clock, DollarSign,
+  ArrowRight, Home, Clock,
 } from "lucide-react";
 
 export default function DashboardPage() {

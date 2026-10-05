@@ -154,7 +154,7 @@ export default function LeadsPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" }}>
         {filtered.length === 0 && (
           <div style={{ gridColumn: "1/-1", padding: "48px", textAlign: "center", color: "#555", fontSize: "0.85rem" }}>
-            No leads found. Click "Add Lead" to add one manually, or use the search filters.
+            No leads found. Click &quot;Add Lead&quot; to add one manually, or use the search filters.
           </div>
         )}
         {filtered.map((lead) => (

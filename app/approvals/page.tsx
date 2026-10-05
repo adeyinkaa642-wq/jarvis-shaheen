@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useStore, Approval } from "@/lib/store";
-import { CheckCircle, XCircle, Clock, AlertCircle, CheckSquare } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 
 const TYPE_COLORS: Record<string, string> = {
   "Lead Outreach": "#c9a84c",
