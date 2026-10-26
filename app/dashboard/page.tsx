@@ -3,7 +3,7 @@ import { useStore } from "@/lib/store";
 import Link from "next/link";
 import {
   Search, Mail, CheckSquare, TrendingUp,
-  ArrowRight, Home, Clock, Building2,
+  ArrowRight, Home, Clock, Building2, PhoneCall,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -197,13 +197,14 @@ export default function DashboardPage() {
         <h3 style={{ fontSize: "0.82rem", color: "#c9a84c", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "16px" }}>
           Quick Actions
         </h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "12px" }}>
           {[
             { label: "Find New Leads", icon: Search, href: "/leads", color: "#c9a84c" },
             { label: "Send Outreach Email", icon: Mail, href: "/emails", color: "#93c5fd" },
+            { label: "AI Call Center", icon: PhoneCall, href: "/calls", color: "#a78bfa" },
             { label: "Review Approvals", icon: CheckSquare, href: "/approvals", color: "#fbbf24" },
-            { label: "Wholesale Deals", icon: Building2, href: "/wholesale", color: "#a78bfa" },
-            { label: "View Activity", icon: TrendingUp, href: "/activity", color: "#34d399" },
+            { label: "Wholesale Deals", icon: Building2, href: "/wholesale", color: "#34d399" },
+            { label: "View Activity", icon: TrendingUp, href: "/activity", color: "#f97316" },
           ].map(({ label, icon: Icon, href, color }) => (
             <Link
               key={href}

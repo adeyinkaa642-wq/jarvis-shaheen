@@ -7,6 +7,7 @@ const titles: Record<string, string> = {
   "/leads":     "Property Leads",
   "/emails":    "Email Workflow",
   "/approvals": "Approvals",
+  "/calls":     "AI Call Center",
   "/activity":  "Activity Log",
   "/settings":  "Settings",
   "/wholesale": "Wholesale Real Estate",

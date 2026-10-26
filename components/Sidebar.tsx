@@ -10,6 +10,7 @@ import {
   Settings,
   Zap,
   Building2,
+  PhoneCall,
 } from "lucide-react";
 
 const nav = [
@@ -17,6 +18,7 @@ const nav = [
   { href: "/leads",      label: "Leads",        icon: Search },
   { href: "/emails",     label: "Emails",       icon: Mail },
   { href: "/approvals",  label: "Approvals",    icon: CheckSquare },
+  { href: "/calls",      label: "AI Calls",     icon: PhoneCall },
   { href: "/wholesale",  label: "Wholesale",    icon: Building2 },
   { href: "/activity",   label: "Activity",     icon: Activity },
   { href: "/settings",   label: "Settings",     icon: Settings },
