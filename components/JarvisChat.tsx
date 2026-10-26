@@ -16,14 +16,17 @@ const RESPONSES: [RegExp, string][] = [
   [/zillow|airbnb|realtor/i, "Jarvis is configured to monitor Zillow, Airbnb, and Realtor for US property listings. In Phase 2, live scraping and auto-discovery will be activated."],
   [/paypal|payment/i, "PayPal payment workflows are scoped for Phase 3. I'll request payment from approved clients via PayPal automatically once that's set up."],
   [/video/i, "AI cinematic property video generation is on the roadmap for Phase 3. I'll produce stunning tours and deliver them automatically once configured."],
-  [/hello|hi|hey/i, "Hello, SHAHEEN. Jarvis is online and monitoring your workflows. How can I assist you today?"],
-  [/status/i, "System status: All Phase 1 workflows are operational. Leads, emails, and approvals are active. Phase 2 (phone & live scraping) and Phase 3 (PayPal & video) pending."],
-  [/phase 2/i, "Phase 2 will include: live property platform scraping, AI phone call handling (Twilio), SMS notifications, and automated outreach triggers."],
+  [/wholesale/i, "Your Wholesale Real Estate agent has {WHOLESALE_DEALS} active deals. {MOTIVATED} are motivated sellers. Pipeline: Lead → Outreach → AI Call → Qualify → Your Approval → Contract → Assign → Closed."],
+  [/motivated seller/i, "You have {MOTIVATED} motivated sellers in your wholesale pipeline. Check the Wholesale page to review them and schedule AI calls."],
+  [/buyer|cash buyer/i, "You have {BUYERS} cash buyers in your buyer&apos;s list. Match qualified wholesale deals to buyers and collect your assignment fee."],
+  [/hello|hi|hey/i, "Hello, SHAHEEN. Jarvis is online and monitoring both your Property Video Tours and Wholesale Real Estate workflows. How can I assist you?"],
+  [/status/i, "System status: All workflows operational. Property Video Tours (Agent 1) and Wholesale Real Estate (Agent 2) are both active. Phase 2 features pending."],
+  [/phase 2/i, "Phase 2 will include: live property platform scraping, AI phone call handling (Twilio), SMS notifications, and automated outreach triggers for both agents."],
   [/phase 3/i, "Phase 3 will cover: PayPal payment requests, AI cinematic video generation, automatic delivery, and full reporting dashboard."],
-  [/help|what can you do/i, "I can help you track leads, manage emails, review approvals, and monitor activity. Ask me about leads, emails, approvals, or system status."],
+  [/help|what can you do/i, "I manage two businesses for SHAHEEN: 1) Property Video Tours — find hosts, send outreach, get approval, collect payment, deliver video. 2) Wholesale Real Estate — lead list, AI outreach, AI call, qualify, approve, contract, assign to buyer."],
 ];
 
-function getResponse(input: string, counts: { leads: number; newLeads: number; emails: number; sent: number; replied: number; pending: number }): string {
+function getResponse(input: string, counts: { leads: number; newLeads: number; emails: number; sent: number; replied: number; pending: number; wholesaleDeals: number; motivated: number; buyers: number }): string {
   for (const [pattern, template] of RESPONSES) {
     if (pattern.test(input)) {
       return template
@@ -32,18 +35,21 @@ function getResponse(input: string, counts: { leads: number; newLeads: number; e
         .replace("{EMAILS}", String(counts.emails))
         .replace("{SENT}", String(counts.sent))
         .replace("{REPLIED}", String(counts.replied))
-        .replace("{PENDING_APPROVALS}", String(counts.pending));
+        .replace("{PENDING_APPROVALS}", String(counts.pending))
+        .replace("{WHOLESALE_DEALS}", String(counts.wholesaleDeals))
+        .replace(/{MOTIVATED}/g, String(counts.motivated))
+        .replace("{BUYERS}", String(counts.buyers));
     }
   }
-  return "I understand. For full AI capabilities, connect your OpenAI API key in Settings. Right now I can help with lead counts, email status, approvals, and system information.";
+  return "I understand. For full AI capabilities, connect your OpenAI API key in Settings. I manage both your Property Video Tours and Wholesale Real Estate workflows.";
 }
 
 export default function JarvisChat() {
-  const { leads, emails, approvals } = useStore();
+  const { leads, emails, approvals, wholesaleDeals, wholesaleBuyers } = useStore();
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { id: "0", role: "jarvis", text: "Hello, SHAHEEN. I'm Jarvis. I'm monitoring your property workflows. Ask me about your leads, emails, approvals, or system status." },
+    { id: "0", role: "jarvis", text: "Hello, SHAHEEN. I'm Jarvis. I'm managing two businesses for you: Property Video Tours and Wholesale Real Estate. Ask me about your deals, leads, approvals, or pipeline status." },
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -56,6 +62,9 @@ export default function JarvisChat() {
     sent: emails.filter((e) => e.status === "Sent").length,
     replied: emails.filter((e) => e.status === "Replied").length,
     pending: approvals.filter((a) => a.status === "Pending").length,
+    wholesaleDeals: wholesaleDeals.length,
+    motivated: wholesaleDeals.filter((d) => d.motivated).length,
+    buyers: wholesaleBuyers.length,
   };
 
   useEffect(() => {

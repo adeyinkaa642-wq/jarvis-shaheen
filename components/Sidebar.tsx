@@ -9,6 +9,7 @@ import {
   Activity,
   Settings,
   Zap,
+  Building2,
 } from "lucide-react";
 
 const nav = [
@@ -16,6 +17,7 @@ const nav = [
   { href: "/leads",      label: "Leads",        icon: Search },
   { href: "/emails",     label: "Emails",       icon: Mail },
   { href: "/approvals",  label: "Approvals",    icon: CheckSquare },
+  { href: "/wholesale",  label: "Wholesale",    icon: Building2 },
   { href: "/activity",   label: "Activity",     icon: Activity },
   { href: "/settings",   label: "Settings",     icon: Settings },
 ];
@@ -161,7 +163,7 @@ export default function Sidebar() {
       <div style={{ padding: "12px 16px 20px", display: "flex", alignItems: "center", gap: "8px" }}>
         <Zap size={12} color="#555" />
         <span style={{ fontSize: "0.6rem", color: "#444", letterSpacing: "0.08em" }}>
-          PHASE 1 · v1.0.0
+          PHASE 2 · v2.0.0
         </span>
       </div>
     </aside>
