@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { X, Send, Minimize2, Maximize2 } from "lucide-react";
+import { X, Send, Minimize2, Maximize2, Mic, MicOff, Volume2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 interface Message {
@@ -9,79 +9,126 @@ interface Message {
   text: string;
 }
 
-const RESPONSES: [RegExp, string][] = [
-  [/how many leads/i, "You currently have {LEADS} leads in the system. {NEW} are new and awaiting outreach."],
-  [/pending approval/i, "There are {PENDING_APPROVALS} pending approvals waiting for your decision. Head to the Approvals page to review them."],
-  [/email/i, "You have {EMAILS} emails tracked. {SENT} sent, {REPLIED} replied. Go to the Emails page to compose a new outreach."],
-  [/zillow|airbnb|realtor/i, "Jarvis is configured to monitor Zillow, Airbnb, and Realtor for US property listings. In Phase 2, live scraping and auto-discovery will be activated."],
-  [/paypal|payment/i, "PayPal payment workflows are scoped for Phase 3. I'll request payment from approved clients via PayPal automatically once that's set up."],
-  [/video/i, "AI cinematic property video generation is on the roadmap for Phase 3. I'll produce stunning tours and deliver them automatically once configured."],
-  [/wholesale/i, "Your Wholesale Real Estate agent has {WHOLESALE_DEALS} active deals. {MOTIVATED} are motivated sellers. Pipeline: Lead → Outreach → AI Call → Qualify → Your Approval → Contract → Assign → Closed."],
-  [/motivated seller/i, "You have {MOTIVATED} motivated sellers in your wholesale pipeline. Check the Wholesale page to review them and schedule AI calls."],
-  [/buyer|cash buyer/i, "You have {BUYERS} cash buyers in your buyer&apos;s list. Match qualified wholesale deals to buyers and collect your assignment fee."],
-  [/hello|hi|hey/i, "Hello, SHAHEEN. Jarvis is online and monitoring both your Property Video Tours and Wholesale Real Estate workflows. How can I assist you?"],
-  [/status/i, "System status: All workflows operational. Property Video Tours (Agent 1) and Wholesale Real Estate (Agent 2) are both active. Phase 2 features pending."],
-  [/phase 2/i, "Phase 2 will include: live property platform scraping, AI phone call handling (Twilio), SMS notifications, and automated outreach triggers for both agents."],
-  [/phase 3/i, "Phase 3 will cover: PayPal payment requests, AI cinematic video generation, automatic delivery, and full reporting dashboard."],
-  [/help|what can you do/i, "I manage two businesses for SHAHEEN: 1) Property Video Tours — find hosts, send outreach, get approval, collect payment, deliver video. 2) Wholesale Real Estate — lead list, AI outreach, AI call, qualify, approve, contract, assign to buyer."],
-];
-
-function getResponse(input: string, counts: { leads: number; newLeads: number; emails: number; sent: number; replied: number; pending: number; wholesaleDeals: number; motivated: number; buyers: number }): string {
-  for (const [pattern, template] of RESPONSES) {
-    if (pattern.test(input)) {
-      return template
-        .replace("{LEADS}", String(counts.leads))
-        .replace("{NEW}", String(counts.newLeads))
-        .replace("{EMAILS}", String(counts.emails))
-        .replace("{SENT}", String(counts.sent))
-        .replace("{REPLIED}", String(counts.replied))
-        .replace("{PENDING_APPROVALS}", String(counts.pending))
-        .replace("{WHOLESALE_DEALS}", String(counts.wholesaleDeals))
-        .replace(/{MOTIVATED}/g, String(counts.motivated))
-        .replace("{BUYERS}", String(counts.buyers));
-    }
-  }
-  return "I understand. For full AI capabilities, connect your OpenAI API key in Settings. I manage both your Property Video Tours and Wholesale Real Estate workflows.";
-}
-
 export default function JarvisChat() {
   const { leads, emails, approvals, wholesaleDeals, wholesaleBuyers } = useStore();
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { id: "0", role: "jarvis", text: "Hello, SHAHEEN. I'm Jarvis. I'm managing two businesses for you: Property Video Tours and Wholesale Real Estate. Ask me about your deals, leads, approvals, or pipeline status." },
+    { id: "0", role: "jarvis", text: "Hello SHAHEEN. I'm Jarvis — your AI business assistant. I manage your Property Video Tours and Wholesale Real Estate workflows. Press the mic to talk to me, or type your message." },
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const counts = {
-    leads: leads.length,
-    newLeads: leads.filter((l) => l.status === "New").length,
-    emails: emails.length,
-    sent: emails.filter((e) => e.status === "Sent").length,
-    replied: emails.filter((e) => e.status === "Replied").length,
-    pending: approvals.filter((a) => a.status === "Pending").length,
-    wholesaleDeals: wholesaleDeals.length,
-    motivated: wholesaleDeals.filter((d) => d.motivated).length,
-    buyers: wholesaleBuyers.length,
-  };
+  const context = `
+Leads: ${leads.length} total, ${leads.filter(l => l.status === "New").length} new, ${leads.filter(l => l.status === "Replied").length} replied
+Emails: ${emails.length} total, ${emails.filter(e => e.status === "Sent").length} sent, ${emails.filter(e => e.status === "Replied").length} replied
+Approvals: ${approvals.filter(a => a.status === "Pending").length} pending
+Wholesale Deals: ${wholesaleDeals.length} total, ${wholesaleDeals.filter(d => d.motivated).length} motivated sellers, ${wholesaleDeals.filter(d => d.status === "Under Contract").length} under contract
+Cash Buyers: ${wholesaleBuyers.length} in buyers list
+`;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
 
-  function send() {
-    if (!input.trim()) return;
-    const userMsg: Message = { id: `m${Date.now()}`, role: "user", text: input.trim() };
-    setMessages((m) => [...m, userMsg]);
+  // ── Voice Input ───────────────────────────────────────────────────────────────
+  function startListening() {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      addJarvisMessage("Voice input is not supported in this browser. Please use Chrome.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => setListening(true);
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+      sendMessage(transcript);
+    };
+
+    recognition.start();
+  }
+
+  function stopListening() {
+    recognitionRef.current?.stop();
+    setListening(false);
+  }
+
+  // ── Voice Output ──────────────────────────────────────────────────────────────
+  function speak(text: string) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 0.95;
+    utterance.pitch = 0.9;
+    utterance.volume = 1;
+
+    // Try to use a good voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v =>
+      v.name.includes("Google") || v.name.includes("Samantha") || v.name.includes("Alex")
+    );
+    if (preferred) utterance.voice = preferred;
+
+    utterance.onstart = () => setSpeaking(true);
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function stopSpeaking() {
+    window.speechSynthesis?.cancel();
+    setSpeaking(false);
+  }
+
+  // ── AI Response ───────────────────────────────────────────────────────────────
+  function addJarvisMessage(text: string, shouldSpeak = false) {
+    setMessages(m => [...m, { id: `m${Date.now()}`, role: "jarvis", text }]);
+    if (shouldSpeak) speak(text);
+  }
+
+  async function sendMessage(text?: string) {
+    const userText = (text || input).trim();
+    if (!userText) return;
+
+    const userMsg: Message = { id: `m${Date.now()}`, role: "user", text: userText };
+    setMessages(m => [...m, userMsg]);
     setInput("");
     setTyping(true);
-    setTimeout(() => {
-      const reply = getResponse(userMsg.text, counts);
+
+    // Build message history for OpenAI
+    const history = [...messages, userMsg]
+      .slice(-10) // last 10 messages for context
+      .map(m => ({ role: m.role === "jarvis" ? "assistant" : "user", content: m.text }));
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history, context }),
+      });
+      const data = await res.json();
       setTyping(false);
-      setMessages((m) => [...m, { id: `m${Date.now()}`, role: "jarvis", text: reply }]);
-    }, 900 + Math.random() * 600);
+      addJarvisMessage(data.reply, text !== undefined); // auto-speak if voice input
+    } catch {
+      setTyping(false);
+      addJarvisMessage("I encountered an error. Please try again.");
+    }
   }
 
   return (
@@ -111,38 +158,44 @@ export default function JarvisChat() {
 
       {/* Chat panel */}
       {open && (
-        <div
-          style={{
-            position: "fixed", bottom: "28px", right: "28px", zIndex: 200,
-            width: "340px",
-            background: "#0a0a0a",
-            border: "1px solid #2a2a2a",
-            borderRadius: "14px",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.7)",
-            display: "flex", flexDirection: "column",
-            overflow: "hidden",
-            transition: "height 0.2s",
-            height: minimized ? "56px" : "480px",
-          }}
-        >
+        <div style={{
+          position: "fixed", bottom: "28px", right: "28px", zIndex: 200,
+          width: "360px",
+          background: "#0a0a0a",
+          border: "1px solid #2a2a2a",
+          borderRadius: "14px",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.7)",
+          display: "flex", flexDirection: "column",
+          overflow: "hidden",
+          height: minimized ? "56px" : "520px",
+          transition: "height 0.2s",
+        }}>
+
           {/* Header */}
-          <div
-            style={{
-              padding: "14px 16px",
-              background: "linear-gradient(90deg, #0d0d0d, #111)",
-              borderBottom: minimized ? "none" : "1px solid #1e1e1e",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              flexShrink: 0,
-            }}
-          >
+          <div style={{
+            padding: "14px 16px",
+            background: "linear-gradient(90deg, #0d0d0d, #111)",
+            borderBottom: minimized ? "none" : "1px solid #1e1e1e",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexShrink: 0,
+          }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div className="glow-pulse" style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#c9a84c" }} />
-              <span style={{ fontSize: "0.82rem", color: "#c9a84c", fontFamily: "Georgia, serif", letterSpacing: "0.1em" }}>
-                JARVIS
-              </span>
+              <span style={{ fontSize: "0.82rem", color: "#c9a84c", fontFamily: "Georgia, serif", letterSpacing: "0.1em" }}>JARVIS</span>
               <span style={{ fontSize: "0.65rem", color: "#444" }}>AI ASSISTANT</span>
+              {speaking && (
+                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  <Volume2 size={11} color="#c9a84c" />
+                  <span style={{ fontSize: "0.6rem", color: "#c9a84c" }}>Speaking...</span>
+                </div>
+              )}
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
+              {speaking && (
+                <button onClick={stopSpeaking} style={{ background: "none", border: "none", cursor: "pointer", color: "#c9a84c", padding: "2px" }} aria-label="Stop speaking">
+                  <Volume2 size={14} />
+                </button>
+              )}
               <button onClick={() => setMinimized(!minimized)} style={{ background: "none", border: "none", cursor: "pointer", color: "#555", padding: "2px" }} aria-label="Minimize">
                 {minimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
               </button>
@@ -155,35 +208,23 @@ export default function JarvisChat() {
           {!minimized && (
             <>
               {/* Messages */}
-              <div
-                style={{
-                  flex: 1, overflowY: "auto", padding: "16px",
-                  display: "flex", flexDirection: "column", gap: "12px",
-                }}
-              >
+              <div style={{
+                flex: 1, overflowY: "auto", padding: "16px",
+                display: "flex", flexDirection: "column", gap: "12px",
+              }}>
                 {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
-                    }}
-                  >
-                    <div
-                      style={{
-                        maxWidth: "82%",
-                        padding: "10px 13px",
-                        borderRadius: msg.role === "user" ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
-                        background: msg.role === "user"
-                          ? "linear-gradient(135deg, #c9a84c20, #9a7a2e20)"
-                          : "#111",
-                        border: `1px solid ${msg.role === "user" ? "#c9a84c30" : "#1e1e1e"}`,
-                        fontSize: "0.78rem",
-                        color: msg.role === "user" ? "#e8c97a" : "#ccc",
-                        lineHeight: 1.55,
-                        fontFamily: "Georgia, serif",
-                      }}
-                    >
+                  <div key={msg.id} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                    <div style={{
+                      maxWidth: "85%",
+                      padding: "10px 13px",
+                      borderRadius: msg.role === "user" ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
+                      background: msg.role === "user" ? "linear-gradient(135deg, #c9a84c20, #9a7a2e20)" : "#111",
+                      border: `1px solid ${msg.role === "user" ? "#c9a84c30" : "#1e1e1e"}`,
+                      fontSize: "0.78rem",
+                      color: msg.role === "user" ? "#e8c97a" : "#ccc",
+                      lineHeight: 1.55,
+                      fontFamily: "Georgia, serif",
+                    }}>
                       {msg.text}
                     </div>
                   </div>
@@ -192,32 +233,62 @@ export default function JarvisChat() {
                 {typing && (
                   <div style={{ display: "flex" }}>
                     <div style={{ padding: "10px 14px", background: "#111", border: "1px solid #1e1e1e", borderRadius: "12px 12px 12px 2px" }}>
-                      <span className="dot" />
-                      <span className="dot" />
-                      <span className="dot" />
+                      <span className="dot" /><span className="dot" /><span className="dot" />
                     </div>
                   </div>
                 )}
                 <div ref={bottomRef} />
               </div>
 
+              {/* Voice indicator */}
+              {listening && (
+                <div style={{
+                  margin: "0 12px 8px",
+                  padding: "8px 12px",
+                  background: "rgba(201,168,76,0.08)",
+                  border: "1px solid rgba(201,168,76,0.3)",
+                  borderRadius: "8px",
+                  display: "flex", alignItems: "center", gap: "8px",
+                }}>
+                  <div className="glow-pulse" style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#c9a84c" }} />
+                  <span style={{ fontSize: "0.72rem", color: "#c9a84c" }}>Listening... speak now</span>
+                  <button onClick={stopListening} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#f87171", fontSize: "0.68rem", fontFamily: "Georgia, serif" }}>
+                    Stop
+                  </button>
+                </div>
+              )}
+
               {/* Input */}
-              <div
-                style={{
-                  padding: "12px", borderTop: "1px solid #1a1a1a",
-                  display: "flex", gap: "8px", flexShrink: 0,
-                }}
-              >
+              <div style={{
+                padding: "12px", borderTop: "1px solid #1a1a1a",
+                display: "flex", gap: "8px", flexShrink: 0,
+              }}>
+                {/* Mic button */}
+                <button
+                  onClick={listening ? stopListening : startListening}
+                  style={{
+                    flexShrink: 0, width: "36px", height: "36px", borderRadius: "8px",
+                    background: listening ? "rgba(201,168,76,0.2)" : "#1a1a1a",
+                    border: `1px solid ${listening ? "#c9a84c" : "#2a2a2a"}`,
+                    cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.2s",
+                  }}
+                  aria-label={listening ? "Stop listening" : "Start voice input"}
+                >
+                  {listening ? <MicOff size={14} color="#c9a84c" /> : <Mic size={14} color="#666" />}
+                </button>
+
                 <input
                   className="jarvis-input"
                   style={{ fontSize: "0.78rem" }}
-                  placeholder="Ask Jarvis anything..."
+                  placeholder="Ask Jarvis or press mic to talk..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") send(); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }}
                 />
                 <button
-                  onClick={send}
+                  onClick={() => sendMessage()}
                   style={{
                     flexShrink: 0, width: "36px", height: "36px", borderRadius: "8px",
                     background: input.trim() ? "linear-gradient(135deg, #c9a84c, #9a7a2e)" : "#1a1a1a",
