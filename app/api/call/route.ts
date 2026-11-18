@@ -49,7 +49,15 @@ export async function POST(req: NextRequest) {
     const data = await response.json();
 
     if (!response.ok) {
-      return NextResponse.json({ success: false, error: data.message }, { status: 400 });
+      // Twilio trial accounts can only call verified numbers
+      const errMsg = data.message || "Unknown Twilio error";
+      if (errMsg.includes("unverified") || errMsg.includes("trial")) {
+        return NextResponse.json({
+          success: false,
+          error: "Twilio Trial Limitation: Your Twilio trial account can only call numbers you have verified. Go to twilio.com → Phone Numbers → Verified Caller IDs → add and verify the number you want to call.",
+        }, { status: 400 });
+      }
+      return NextResponse.json({ success: false, error: errMsg }, { status: 400 });
     }
 
     return NextResponse.json({

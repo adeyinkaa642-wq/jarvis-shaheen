@@ -159,11 +159,14 @@ export default function CallsPage() {
       <div style={{ background: "rgba(167,139,250,0.05)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: "10px", padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
         <Mic size={16} color="#a78bfa" style={{ flexShrink: 0, marginTop: "2px" }} />
         <div>
-          <p style={{ fontSize: "0.8rem", color: "#a78bfa", marginBottom: "4px", fontWeight: 700 }}>Setup Required for Live Calls</p>
+          <p style={{ fontSize: "0.8rem", color: "#a78bfa", marginBottom: "4px", fontWeight: 700 }}>⚠️ Twilio Trial — Verify Numbers First</p>
           <p style={{ fontSize: "0.75rem", color: "#666", lineHeight: 1.6 }}>
-            To activate live AI calls, add your Twilio credentials in <strong style={{ color: "#aaa" }}>Settings → API Keys</strong>:
-            TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER.
-            Get a free Twilio account at <strong style={{ color: "#a78bfa" }}>twilio.com</strong>. Call scripts are already built and ready to go.
+            Your Twilio trial account can only call <strong style={{ color: "#aaa" }}>verified numbers</strong>. Before calling any number:
+            <br />1. Go to <strong style={{ color: "#a78bfa" }}>console.twilio.com</strong>
+            <br />2. Click <strong style={{ color: "#aaa" }}>Phone Numbers → Verified Caller IDs</strong>
+            <br />3. Add and verify the number you want to call
+            <br />4. Come back here and hit <strong style={{ color: "#aaa" }}>Call Now</strong>
+            <br /><br />To call ANY number without restrictions, upgrade your Twilio account (add $20 credit).
           </p>
         </div>
       </div>
